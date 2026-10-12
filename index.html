@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sélection de work teams</title>
+<style>
+:root{--color-bg:#F3F3F3;--color-fg:#181818;--color-fg-muted:#444;--color-panel:#fff;--color-border-line:#E5E5E5;--color-ok:#2E844A;--color-bad:#BA0517;--cds-font-size-caption:.75rem;--cds-font-size-body:.875rem;--cds-font-size-heading:1rem;--cds-font-size-title:1.5rem;--cds-font-weight-medium:600;--cds-radius:.25rem;--cds-gap-sm:8px;--cds-gap-md:16px;--cds-pad-md:12px;--cds-pad-lg:16px;--font-anthropic-sans:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--font-anthropic-serif:Georgia,serif}
+@media (prefers-color-scheme:dark){:root{--color-bg:#14181F;--color-fg:#F3F3F3;--color-fg-muted:#B3BBC8;--color-panel:#1F252E;--color-border-line:#343C48}}
+html,body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(--font-anthropic-sans)}
+body{padding:16px}
+</style>
+</head>
+<body>
+<script>
+// Remplace l'API `dash` du dashboard Claude : charge les JSON de ./data et rappelle onData une fois prêts.
+(function(){
+  const ids=['workteams','services','specialties','postcodes'],store={},cbs=[];
+  window.dash={
+    data:id=>store[id]?{status:'ok',data:store[id]}:{status:'loading',data:[]},
+    onData:fn=>{cbs.push(fn);fn();}
+  };
+  Promise.all(ids.map(id=>fetch('data/'+id+'.json').then(r=>{if(!r.ok)throw new Error(id);return r.json();}).then(d=>{store[id]=d;})))
+    .then(()=>cbs.forEach(f=>f()))
+    .catch(e=>{document.body.insertAdjacentHTML('afterbegin','<p style="color:#BA0517;padding:16px">Impossible de charger les données ('+e.message+').</p>');});
+})();
+</script>
+<style>
+.wt{max-width:1100px;margin-inline:auto;font-family:var(--font-anthropic-sans);color:var(--color-fg)}
+.wt h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);margin:0 0 4px}
+.wt .sub{color:var(--color-fg-muted);margin:0 0 var(--cds-gap-md)}
+.wt .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:var(--cds-gap-md);margin-bottom:var(--cds-gap-md)}
+.wt .card{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-lg)}
+.wt h2{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0 0 2px}
+.wt .note{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);margin:0 0 var(--cds-gap-sm)}
+.wt .row{display:flex;gap:var(--cds-gap-sm);flex-wrap:wrap;align-items:center;margin-bottom:var(--cds-gap-sm)}
+.wt select,.wt input[type=text]{font:inherit;padding:6px 8px;border:1px solid var(--color-border-line);border-radius:var(--cds-radius);background:var(--color-bg);color:var(--color-fg);min-width:0}
+.wt select{flex:1 1 12rem}
+.wt button{font:inherit;padding:6px 12px;border:1px solid var(--color-border-line);border-radius:var(--cds-radius);background:var(--color-bg);color:var(--color-fg);cursor:pointer}
+.wt button.primary{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg);padding:8px 18px}
+.wt button:disabled{opacity:.45;cursor:default}
+.wt ul{list-style:none;margin:0;padding:0}
+.wt li.item{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--color-border-line)}
+.wt li.item small{color:var(--color-fg-muted)}
+.wt label.crit{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--color-border-line);cursor:pointer}
+.wt label.crit span small{display:block;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.wt .chips{display:flex;gap:6px;flex-wrap:wrap;margin:var(--cds-gap-sm) 0}
+.wt .chip{border:1px solid var(--color-border-line);border-radius:99px;padding:2px 10px;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);font-variant-numeric:tabular-nums}
+.wt .chip b{color:var(--color-fg);font-weight:var(--cds-font-weight-medium)}
+.wt table{width:100%;border-collapse:collapse;font-size:var(--cds-font-size-body)}
+.wt th{text-align:left;font-weight:var(--cds-font-weight-medium);color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);padding:6px 8px;border-bottom:1px solid var(--color-border-line)}
+.wt td{padding:8px;border-bottom:1px solid var(--color-border-line);vertical-align:top}
+.wt .tbl{overflow-x:auto}
+.wt .b{display:inline-block;padding:1px 8px;margin:0 4px 4px 0;border-radius:99px;font-size:var(--cds-font-size-caption);border:1px solid var(--color-border-line);color:var(--color-fg-muted)}
+.wt .b.p1{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
+.wt .b.off{border-color:var(--color-bad);color:var(--color-bad)}
+.wt .empty{color:var(--color-fg-muted);padding:var(--cds-pad-md) 0}
+.wt .tabs{display:flex;gap:6px;margin-bottom:var(--cds-gap-md)}
+.wt .tabs button.on{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
+.wt .fun{row-gap:4px;display:grid;grid-template-columns:minmax(7rem,10rem) 1fr 7rem;gap:6px 10px;align-items:center;font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums;margin:var(--cds-gap-sm) 0}
+.wt .fbar{height:18px;border-radius:4px;background:var(--cds-chart-muted,var(--color-border-line))}
+.wt .fbar.first{background:var(--color-fg)}
+.wt .fbar.worst{background:var(--cds-chart-status-critical,var(--color-bad))}
+.wt .lost{color:var(--color-fg-muted);text-align:right}
+.wt .lost.worst{color:var(--color-bad)}
+.wt tr.click{cursor:pointer}.wt tr.click:hover td,.wt tr.sel td{background:var(--color-bg)}
+.wt .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:var(--cds-gap-md);align-items:start}
+.wt .scroll{max-height:560px;overflow:auto}
+.wt th{position:sticky;top:0;background:var(--color-panel)}
+.wt .opts{display:flex;flex-wrap:wrap;gap:4px 12px}
+.wt .opts label{display:flex;gap:4px;align-items:center;font-size:var(--cds-font-size-caption);cursor:pointer}
+.wt .sp{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;margin-bottom:4px}
+.wt h3{font-size:var(--cds-font-size-body);font-weight:var(--cds-font-weight-medium);margin:14px 0 6px}
+.wt .st{display:flex;gap:6px;align-items:baseline;font-size:var(--cds-font-size-caption)}
+.wt .st .ic{font-weight:700}
+.wt .st.ok{color:var(--color-ok)}.wt .st.ko{color:var(--color-bad)}
+.wt .stsub{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);margin:2px 0 0 18px}
+
+/* Thème inspiré du Salesforce Lightning Design System */
+.wt{--sf-brand:#0176D3;--sf-btn:#0176D3;--sf-btn-h:#014486;--sf-bg:#F3F3F3;--sf-card:#FFFFFF;--sf-bd:#E5E5E5;--sf-bd2:#C9C9C9;--sf-in:#747474;--sf-tx:#181818;--sf-mu:#444444;--sf-ok:#2E844A;--sf-ko:#BA0517;--sf-sel:#EEF4FF;--sf-th:#F3F3F3;--sf-bar:#C9C9C9;
+ background:var(--sf-bg);color:var(--sf-tx);padding:16px;border-radius:.5rem;font-family:"Salesforce Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.wt{--sf-f0:#B9DAFF;--sf-f1:#014486}
+.wt.dk{--sf-f0:#2A4F7F;--sf-f1:#6CB4FF;--sf-brand:#78B0FD;--sf-btn:#0B5CAB;--sf-btn-h:#0176D3;--sf-bg:#14181F;--sf-card:#1F252E;--sf-bd:#343C48;--sf-bd2:#4A5462;--sf-in:#7C8797;--sf-tx:#F3F3F3;--sf-mu:#B3BBC8;--sf-ok:#45C65A;--sf-ko:#FE8F7F;--sf-sel:#16335C;--sf-th:#262D38;--sf-bar:#4A5462}
+.wt .eyebrow{font-size:var(--cds-font-size-caption);color:var(--sf-mu);text-transform:uppercase;letter-spacing:.06em;margin:0 0 2px}
+.wt h1{font-family:inherit;font-weight:700;font-size:1.375rem;color:var(--sf-tx)}
+.wt .sub,.wt .note,.wt .item small,.wt label.crit span small{color:var(--sf-mu)}
+.wt .card{background:var(--sf-card);border:1px solid var(--sf-bd);border-radius:.25rem;box-shadow:0 2px 2px 0 rgba(0,0,0,.1)}
+.wt h2{font-weight:700;font-size:1rem}
+.wt .tabs{gap:0;border-bottom:1px solid var(--sf-bd2)}
+.wt .tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--sf-mu);padding:8px 16px;margin-bottom:-1px}
+.wt .tabs button:hover{color:var(--sf-brand)}
+.wt .tabs button.on{background:none;color:var(--sf-brand);border-color:var(--sf-brand);font-weight:700}
+.wt button{background:var(--sf-card);color:var(--sf-brand);border:1px solid var(--sf-bd2);border-radius:.25rem}
+.wt button:hover:not(:disabled){background:var(--sf-th)}
+.wt button.primary{background:var(--sf-btn);border-color:var(--sf-btn);color:#fff;font-weight:600}
+.wt button.primary:hover:not(:disabled){background:var(--sf-btn-h);border-color:var(--sf-btn-h)}
+.wt select,.wt input[type=text]{background:var(--sf-card);color:var(--sf-tx);border:1px solid var(--sf-in);border-radius:.25rem}
+.wt select:focus,.wt input:focus,.wt button:focus-visible{outline:none;box-shadow:0 0 0 2px var(--sf-card),0 0 0 4px var(--sf-brand)}
+.wt input[type=checkbox]{accent-color:var(--sf-btn)}
+.wt li.item,.wt label.crit,.wt td,.wt th{border-color:var(--sf-bd)}
+.wt th{background:var(--sf-th);color:var(--sf-mu);text-transform:uppercase;letter-spacing:.04em;font-size:.6875rem;font-weight:700;border-bottom:1px solid var(--sf-bd2)}
+.wt tr.click:hover td{background:var(--sf-th)}
+.wt tr.sel td{background:var(--sf-sel)}
+.wt .b{background:var(--sf-th);border:1px solid var(--sf-bd);color:var(--sf-tx);border-radius:.875rem}
+.wt .b.p1{background:var(--sf-btn);border-color:var(--sf-btn);color:#fff}
+.wt .b.off{background:transparent;border-color:var(--sf-ko);color:var(--sf-ko)}
+.wt .fbar{background:var(--sf-bar)}.wt .fbar.first{background:var(--sf-btn)}.wt .fbar.worst{background:var(--sf-ko)}
+.wt .lost{color:var(--sf-mu)}.wt .lost.worst{color:var(--sf-ko);font-weight:700}
+.wt .st.ok{color:var(--sf-ok)}.wt .st.ko{color:var(--sf-ko)}
+.wt .stsub,.wt .empty{color:var(--sf-mu)}
+.wt .big{font-family:var(--font-anthropic-serif);font-size:var(--cds-font-size-title)}
+</style>
+<div class="wt">
+<div class="eyebrow">Work Order · Pré-processing</div>
+<h1 id="top">Sélection de work teams</h1>
+<p class="sub">Composez un Work Order, choisissez les critères de pré-processing, puis lancez la sélection.</p>
+<div class="tabs"><button id="tb-sel" class="on">Sélection</button><button id="tb-teams">Work teams</button><button id="tb-svc">Services</button></div>
+<div id="tab-sel">
+<div class="grid">
+ <div class="card" id="wo">
+  <h2>Work Order</h2>
+  <p class="note">Code postal du chantier et services (Work Order Line Items).</p>
+  <div class="row"><select id="wt-cp" aria-label="Code postal" data-source="postcodes"></select></div>
+  <div class="row"><select id="wt-svc" aria-label="Service" data-source="services"></select><button id="wt-add">Ajouter</button></div>
+  <ul id="wt-items"></ul>
+  <div class="row" style="margin-top:8px"><button id="wt-sample">Exemple</button><button id="wt-clear">Vider</button></div>
+ </div>
+ <div class="card" id="criteria">
+  <h2>Critères de pré-processing</h2>
+  <p class="note">Tous appliqués par défaut.</p>
+  <label class="crit"><input type="checkbox" id="c-zone" checked><span>Zone d'intervention<small>La work team couvre le code postal du chantier.</small></span></label>
+  <label class="crit"><input type="checkbox" id="c-spec" checked><span>Spécialités<small>Au moins une spécialité de chaque service du chantier.</small></span></label>
+  <label class="crit"><input type="checkbox" id="c-prio" checked><span>Priorité P1<small>Au moins une spécialité P1 parmi celles requises par le chantier.</small></span></label>
+  <label class="crit"><input type="checkbox" id="c-opt" checked><span>Services opt-out<small>Aucun service du chantier dans sa liste d'opt-out.</small></span></label>
+  <label class="crit"><input type="checkbox" id="c-lim" checked><span>Limite<small>Ne garder que les meilleures work teams (triées par spécialités P1, puis spécialités requises couvertes).</small><span style="display:flex;gap:6px;align-items:center;margin-top:4px">Maximum <input type="number" id="lim-n" value="20" min="1" max="100" step="1" style="width:5rem;font:inherit;padding:4px 6px;border:1px solid var(--sf-in);border-radius:.25rem;background:var(--sf-card);color:var(--sf-tx)" aria-label="Nombre maximum de work teams"></span></span></label>
+  <div class="row" style="margin-top:12px"><button class="primary" id="wt-run" disabled>Pré-processing</button><span class="note" id="wt-hint" style="margin:0"></span></div>
+ </div>
+</div>
+<div class="card" id="results" data-source="workteams services specialties">
+ <h2>Work teams retenues</h2>
+ <p class="note" id="wt-sum">Lancez le pré-processing pour afficher les work teams.</p>
+ <div class="chips" id="wt-funnel"></div>
+ <div class="tbl" id="wt-out"></div>
+</div>
+</div>
+<div id="tab-svc" hidden>
+ <div class="split">
+  <div class="card" data-source="services workteams">
+   <h2>Liste des services</h2>
+   <p class="note" id="sl-note">Cliquez sur un service pour voir et modifier ses spécialités.</p>
+   <div class="row"><input type="text" id="sl-q" placeholder="Rechercher (code, libellé, spécialité)…" aria-label="Rechercher un service" style="flex:1 1 14rem"></div>
+   <div class="tbl scroll" id="sl-out"></div>
+  </div>
+  <div class="card" id="sdetail"><h2>Détail</h2><p class="note">Sélectionnez un service.</p></div>
+ </div>
+</div>
+<div id="tab-teams" hidden>
+ <div class="split">
+  <div class="card" data-source="workteams">
+   <h2>Liste des work teams</h2>
+   <p class="note" id="tl-note">Cliquez sur une ligne pour voir et modifier ses caractéristiques.</p>
+   <div class="row" id="tl-filter" hidden></div>
+   <div class="row"><input type="text" id="tl-q" placeholder="Rechercher (nom, id, code postal, spécialité)…" aria-label="Rechercher" style="flex:1 1 14rem"></div>
+   <div class="tbl scroll" id="tl-out"></div>
+  </div>
+  <div class="card" id="detail"><h2>Détail</h2><p class="note">Sélectionnez une work team.</p></div>
+ </div>
+</div>
+</div>
+<script>
+(function(){
+const $=s=>document.getElementById(s);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
+const split=s=>s?String(s).split('|').filter(Boolean):[];
+const S={ran:false,filter:null,steps:[],items:[],ready:false,built:false,teams:[],svc:new Map(),spec:new Map(),cps:[]};
+function renderItems(){
+  const ul=$('wt-items');ul.replaceChildren();
+  if(!S.items.length){const li=el('li','empty','Aucun service ajouté.');ul.append(li);}
+  S.items.forEach(code=>{const s=S.svc.get(code);const li=el('li','item');
+    const l=el('span');l.append(el('b',null,code+' '),el('small',null,s?s.label+' · '+split(s.specialties).map(x=>S.spec.get(x)||x).join(', '):''));
+    const b=el('button',null,'Retirer');b.onclick=()=>{S.items=S.items.filter(c=>c!==code);renderItems();};
+    li.append(l,b);ul.append(li);});
+  update();
+}
+function update(){
+  const need=S.items.length&&($('wt-cp').value||!$('c-zone').checked);
+  $('wt-run').disabled=!(S.ready&&need);
+  $('wt-hint').textContent=!S.items.length?'Ajoutez au moins un service.':(!$('wt-cp').value&&$('c-zone').checked?'Choisissez un code postal.':'');
+}
+function run(){S.ran=true;
+  const cp=$('wt-cp').value,on=k=>$('c-'+k).checked;
+  const svcs=S.items.map(c=>S.svc.get(c));
+  const reqSpecs=new Set(svcs.flatMap(s=>split(s.specialties)));
+  const tests=[
+   ['zone','Zone',t=>t.z.has(cp)],
+   ['spec','Spécialités',t=>svcs.every(s=>split(s.specialties).some(x=>t.sp.has(x)))],
+   ['prio','Priorité P1',t=>[...reqSpecs].some(x=>t.sp.get(x)==='P1')],
+   ['opt','Opt-out',t=>!S.items.some(c=>t.o.has(c))]
+  ].filter(x=>on(x[0]));
+  const scoreOf=t=>{const rel=[...reqSpecs].filter(x=>t.sp.has(x));return rel.filter(x=>t.sp.get(x)==='P1').length*100+rel.length*10+(t.z.has(cp)?1:0);};
+  const ranked=a=>[...a].sort((x,y)=>scoreOf(y)-scoreOf(x)||x.id.localeCompare(y.id));
+  let pool=S.teams;const chips=[['Work teams',pool.length]];S.steps=[new Set(pool.map(t=>t.id))];
+  tests.forEach(([k,n,f])=>{pool=pool.filter(f);chips.push([n,pool.length]);S.steps.push(new Set(pool.map(t=>t.id)));});
+  if(on('lim')){const n=Math.min(100,Math.max(1,parseInt($('lim-n').value,10)||20));$('lim-n').value=n;pool=ranked(pool).slice(0,n);chips.push(['Limite ('+n+')',pool.length]);S.steps.push(new Set(pool.map(t=>t.id)));}
+  const maxLoss=Math.max(0,...chips.map((c,i)=>i?chips[i-1][1]-c[1]:0));
+  const show=(idx)=>{
+  const pool=S.teams.filter(t=>S.steps[idx].has(t.id));
+  const scored=pool.map(t=>{const rel=[...reqSpecs].filter(x=>t.sp.has(x));
+    const p1=rel.filter(x=>t.sp.get(x)==='P1').length;return {t,rel,p1,score:p1*100+rel.length*10+(t.z.has(cp)?1:0)};})
+   .sort((a,b)=>b.score-a.score||a.t.id.localeCompare(b.t.id));
+  const top=scored;
+  const cn=chips[idx][0];const name=idx?(cn.startsWith('Limite')?cn:'Après '+cn.charAt(0).toLowerCase()+cn.slice(1)):cn;
+  $('wt-sum').textContent=name+' : '+pool.length+' work team(s)'+' · triées par nombre de spécialités P1 puis de spécialités requises couvertes. Cliquez sur une étape de l\'entonnoir pour changer la liste.';
+  const f=$('wt-funnel');f.replaceChildren();f.className='';
+  chips.forEach(([n,v],i)=>{const loss=i?chips[i-1][1]-v:0,worst=loss>0&&loss===maxLoss;
+    const go=()=>show(i);
+    const lab=el('button',null,i?(n.startsWith('Limite')?n:'Après '+n.charAt(0).toLowerCase()+n.slice(1)):n);lab.style.cssText='text-align:left;border:0;padding:0;background:none;text-decoration:'+(i===idx?'underline':'none')+';font-weight:'+(i===idx?'600':'400')+';';lab.title='Afficher ces work teams';lab.onclick=go;
+    const bw=el('div');const bar=el('div','fbar');bar.style.background='color-mix(in srgb, var(--sf-f1) '+Math.round(chips.length>1?i/(chips.length-1)*100:100)+'%, var(--sf-f0))';bar.style.width=(chips[0][1]?Math.max(v/chips[0][1]*100,1):1)+'%';bar.style.margin='0 auto';bar.style.height='26px';bar.style.borderRadius='3px';if(i!==idx)bar.style.opacity='.45';else bar.style.boxShadow='0 0 0 2px var(--sf-card), 0 0 0 3px var(--sf-brand)';bw.append(bar);
+    bw.style.cursor='pointer';bw.title='Afficher ces work teams';bw.onclick=go;
+    const val=el('span','lost'+(worst?' worst':''),v+(i?' (−'+loss+')':''));
+    f.append(lab,bw,val);});
+  f.className='fun';
+  const out=$('wt-out');out.replaceChildren();
+  if(!top.length){out.append(el('div','empty','Aucune work team à cette étape. Désactivez un critère pour élargir.'));return;}
+  const ST=(ok,text,sub)=>{const w=el('div','st '+(ok?'ok':'ko'));w.append(el('span','ic',ok?'✓':'✗'));
+    const t=el('span',null,text);w.append(t);w.setAttribute('aria-label',(ok?'OK : ':'KO : ')+text);
+    if(sub){const s=el('div','stsub',sub);const c=el('div');c.append(w,s);return c;}return w;};
+  const tb=el('table'),h=el('tr');
+  [['#',null],['Work team',null],['Zone','zone'],['Spécialités','spec'],['Priorité P1','prio'],['Opt-out','opt']].forEach(([x,k])=>{const th=el('th',null,x+(k&&!on(k)?' (non appliqué)':''));if(k&&!on(k))th.style.opacity='.6';h.append(th);});
+  tb.append(h);
+  top.forEach((r,i)=>{const t=r.t,tr=el('tr','click');tr.onclick=()=>openTeam(t.id);
+    tr.append(el('td',null,String(i+1)));
+    const a=el('td');a.append(el('b',null,t.name),el('br'),el('small',null,t.id));tr.append(a);
+    const zc=el('td');
+    if(cp)zc.append(t.z.has(cp)?ST(true,cp):ST(false,cp+' hors zone'));else zc.append('—');
+    const miss=svcs.filter(s=>!split(s.specialties).some(x=>t.sp.has(x)));
+    const sc=el('td');
+    sc.append(miss.length?ST(false,miss.length+'/'+svcs.length+' service(s) non couvert(s)',miss.map(s=>s.code+' '+s.label).join(' · ')):ST(true,'Tous les services couverts',r.rel.map(x=>S.spec.get(x)||x).join(', ')));
+    const p1=[...reqSpecs].filter(x=>t.sp.get(x)==='P1');
+    const pc=el('td');pc.append(p1.length?ST(true,p1.map(x=>S.spec.get(x)||x).join(', ')):ST(false,'Aucune P1 requise'));
+    const hits=S.items.filter(c=>t.o.has(c));
+    const oc=el('td');oc.append(hits.length?ST(false,hits.join(', ')):ST(true,'Aucun'));
+    tr.append(zc,sc,pc,oc);tb.append(tr);});
+  out.append(tb);
+  };
+  show(chips.length-1);
+}
+const orig=new Map();let cur=null;
+function tab(n){$('tab-sel').hidden=n!=='sel';$('tab-teams').hidden=n!=='teams';$('tab-svc').hidden=n!=='svc';$('tb-sel').className=n==='sel'?'on':'';$('tb-teams').className=n==='teams'?'on':'';$('tb-svc').className=n==='svc'?'on':'';if(n==='teams')drawList();if(n==='svc')drawSvcList();}
+$('tb-svc').onclick=()=>tab('svc');
+$('tb-sel').onclick=()=>tab('sel');$('tb-teams').onclick=()=>tab('teams');
+function openTeam(id){cur=id;tab('teams');drawDetail();}
+function drawList(){
+  const q=$('tl-q').value.trim().toLowerCase();
+  const F=S.filter;const fb=$('tl-filter');fb.replaceChildren();fb.hidden=!F;
+  if(F){const c=el('button',null,'Filtre : '+F.label+' ('+F.ids.size+') ×');c.onclick=()=>{S.filter=null;drawList();};fb.append(c);}
+  const rows=S.teams.filter(t=>(!F||F.ids.has(t.id))&&(!q||(t.name+' '+t.id+' '+t.zl.join(' ')+' '+[...t.sp.keys()].map(k=>k+' '+(S.spec.get(k)||'')).join(' ')).toLowerCase().includes(q)));
+  $('tl-note').textContent=rows.length+' / '+S.teams.length+' work teams · cliquez sur une ligne pour voir et modifier ses caractéristiques.';
+  const out=$('tl-out');out.replaceChildren();
+  const tb=el('table'),h=el('tr');['Work team','Zones','Spécialités','Opt-out'].forEach(x=>h.append(el('th',null,x)));tb.append(h);
+  rows.forEach(t=>{const tr=el('tr','click'+(t.id===cur?' sel':''));tr.onclick=()=>{cur=t.id;drawList();drawDetail();};
+    const a=el('td');a.append(el('b',null,t.name),el('br'),el('small',null,t.id));
+    tr.append(a,el('td',null,String(t.z.size)+' code(s) postaux'));
+    const s=el('td');[...t.sp].forEach(([k,p])=>s.append(el('span','b '+(p==='P1'?'p1':''),(S.spec.get(k)||k)+' '+p)));tr.append(s);
+    tr.append(el('td',null,t.o.size?String(t.o.size):'—'));tb.append(tr);});
+  out.append(tb);
+}
+function sync(t){t.zl=[...t.z].sort();}
+function drawDetail(){
+  const d=$('detail');d.replaceChildren();const t=S.teams.find(x=>x.id===cur);if(!t)return;
+  d.append(el('h2',null,t.name),el('p','note',t.id+" · les modifications s'appliquent tout de suite à la sélection, mais ne sont pas enregistrées (retour à l'état d'origine au rechargement)."));
+  const done=()=>{sync(t);drawList();if(!$('tab-svc').hidden)drawSvcList();if(!$('wt-out').hidden&&S.items.length&&!$('wt-run').disabled&&S.ran)run();};
+  d.append(el('h3',null,"Zones d'intervention ("+t.z.size+')'));
+  const zo=el('div','opts');S.cps.forEach(c=>{const l=el('label'),i=el('input');i.type='checkbox';i.checked=t.z.has(c);
+    i.onchange=()=>{i.checked?t.z.add(c):t.z.delete(c);done();drawDetail();};l.append(i,c);zo.append(l);});d.append(zo);
+  d.append(el('h3',null,'Spécialités'));
+  const sg=el('div');S.spec.forEach((lab,k)=>{const w=el('div','sp');w.append(el('span',null,lab));
+    const s=el('select');[['','—'],['P1','P1'],['P2','P2']].forEach(([v,x])=>s.append(new Option(x,v)));s.style.flex='none';s.value=t.sp.get(k)||'';
+    s.onchange=()=>{s.value?t.sp.set(k,s.value):t.sp.delete(k);done();drawDetail();};w.append(s);sg.append(w);});d.append(sg);
+  d.append(el('h3',null,'Services opt-out ('+t.o.size+')'));
+  const oo=el('div','opts');oo.style.flexDirection='column';S.svc.forEach((s,c)=>{const l=el('label'),i=el('input');i.type='checkbox';i.checked=t.o.has(c);
+    i.onchange=()=>{i.checked?t.o.add(c):t.o.delete(c);done();drawDetail();};l.append(i,c+' – '+s.label);oo.append(l);});d.append(oo);
+  const r=el('button',null,'Réinitialiser cette work team');r.style.marginTop='12px';r.onclick=()=>{const o=orig.get(t.id);t.z=new Set(o.z);t.sp=new Map(o.sp);t.o=new Set(o.o);sync(t);drawList();drawDetail();};d.append(r);
+}
+$('tl-q').addEventListener('input',drawList);
+const sorig=new Map();let scur=null;
+function nTeams(s){const sp=split(s.specialties);return S.teams.filter(t=>sp.some(x=>t.sp.has(x))).length;}
+function refreshSvcOptions(){const v=$('wt-svc').value;$('wt-svc').replaceChildren(...[...S.svc.values()].map(s=>new Option(s.code+' – '+s.label,s.code)));$('wt-svc').value=v;}
+function drawSvcList(){
+  const q=$('sl-q').value.trim().toLowerCase();
+  const rows=[...S.svc.values()].filter(s=>!q||(s.code+' '+s.label+' '+split(s.specialties).map(x=>x+' '+(S.spec.get(x)||'')).join(' ')).toLowerCase().includes(q));
+  $('sl-note').textContent=rows.length+' / '+S.svc.size+' services · cliquez sur un service pour voir et modifier ses spécialités.';
+  const out=$('sl-out');out.replaceChildren();
+  const tb=el('table'),h=el('tr');['Service','Spécialités','Work teams aptes','Opt-out'].forEach(x=>h.append(el('th',null,x)));tb.append(h);
+  rows.forEach(s=>{const tr=el('tr','click'+(s.code===scur?' sel':''));tr.onclick=()=>{scur=s.code;drawSvcList();drawSvcDetail();};
+    const a=el('td');a.append(el('b',null,s.code),el('br'),el('small',null,s.label));
+    const sp=el('td');split(s.specialties).forEach(x=>sp.append(el('span','b',S.spec.get(x)||x)));if(!split(s.specialties).length)sp.append(el('span','b off','aucune'));
+    tr.append(a,sp,el('td',null,String(nTeams(s))),el('td',null,String(S.teams.filter(t=>t.o.has(s.code)).length)));tb.append(tr);});
+  out.append(tb);
+}
+function drawSvcDetail(){
+  const d=$('sdetail');d.replaceChildren();const s=S.svc.get(scur);if(!s)return;
+  d.append(el('h2',null,s.code),el('p','note',"Les modifications s'appliquent tout de suite à la sélection, mais ne sont pas enregistrées (retour à l'état d'origine au rechargement)."));
+  const done=()=>{refreshSvcOptions();renderItems();drawSvcList();if(S.ran&&!$('wt-run').disabled)run();};
+  d.append(el('h3',null,'Libellé'));
+  const li=el('input');li.type='text';li.value=s.label;li.style.width='100%';li.setAttribute('aria-label','Libellé');li.onchange=()=>{s.label=li.value.trim()||s.label;done();drawSvcDetail();};d.append(li);
+  d.append(el('h3',null,'Spécialités (au moins une requise pour la work team)'));
+  const cur=new Set(split(s.specialties)),oo=el('div','opts');oo.style.flexDirection='column';
+  S.spec.forEach((lab,k)=>{const l=el('label'),i=el('input');i.type='checkbox';i.checked=cur.has(k);
+    i.onchange=()=>{i.checked?cur.add(k):cur.delete(k);s.specialties=[...S.spec.keys()].filter(x=>cur.has(x)).join('|');done();drawSvcDetail();};l.append(i,lab+' ('+k+')');oo.append(l);});
+  d.append(oo);
+  d.append(el('p','note','Work teams ayant au moins une de ces spécialités : '+nTeams(s)+' · en P1 : '+S.teams.filter(t=>split(s.specialties).some(x=>t.sp.get(x)==='P1')).length));
+  const r=el('button',null,'Réinitialiser ce service');r.style.marginTop='12px';r.onclick=()=>{Object.assign(s,sorig.get(s.code));done();drawSvcDetail();};d.append(r);
+}
+$('sl-q').addEventListener('input',drawSvcList);
+$('wt-add').onclick=()=>{const v=$('wt-svc').value;if(v&&!S.items.includes(v)){S.items.push(v);renderItems();}};
+function resetResults(){S.ran=false;S.steps=[];$('wt-sum').textContent='Lancez le pré-processing pour afficher les work teams.';$('wt-funnel').replaceChildren();$('wt-funnel').className='';$('wt-out').replaceChildren();}
+$('wt-clear').onclick=()=>{S.items=[];$('wt-cp').value='';resetResults();renderItems();};
+$('wt-sample').onclick=()=>{if(!S.ready)return;$('wt-cp').value='94200';S.items=['49000106','49000112','49000114'];resetResults();renderItems();};
+$('wt-run').onclick=()=>{S.filter=null;run();};
+['c-zone','c-spec','c-prio','c-opt','c-lim'].forEach(k=>$(k).addEventListener('change',update));
+$('wt-cp').addEventListener('change',update);
+const wtRoot=document.querySelector('.wt');
+const theme=()=>{const m=[0];wtRoot.classList.toggle('dk',matchMedia('(prefers-color-scheme: dark)').matches);};
+dash.onData(()=>{
+  const ids=['workteams','services','specialties','postcodes'];
+  const d=ids.map(i=>dash.data(i));
+  theme();
+  if(d.some(x=>x.status!=='ok')){S.ready=false;update();return;}
+  if(!S.built){
+    S.teams=d[0].data.map(r=>({id:r.id,name:r.name,zl:split(r.zones),z:new Set(split(r.zones)),
+      sp:new Map(split(r.specialties).map(x=>x.split(':'))),o:new Set(split(r.optouts))}));
+    d[1].data.forEach(s=>S.svc.set(s.code,s));d[2].data.forEach(s=>S.spec.set(s.code,s.label));
+    $('wt-cp').replaceChildren(new Option('Code postal du chantier…',''),...d[3].data.map(r=>new Option(r.code)));
+    $('wt-svc').replaceChildren(...d[1].data.map(s=>new Option(s.code+' – '+s.label,s.code)));
+    S.teams.forEach(t=>orig.set(t.id,{z:[...t.z],sp:[...t.sp],o:[...t.o]}));S.cps=d[3].data.map(r=>r.code);d[1].data.forEach(s=>sorig.set(s.code,{label:s.label,specialties:s.specialties}));S.built=true;renderItems();
+  }
+  S.ready=true;update();
+});
+})();
+</script>
+
+</body>
+</html>
