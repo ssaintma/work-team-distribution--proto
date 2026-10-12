@@ -108,9 +108,16 @@ body{padding:16px}
 .wt .lost{color:var(--sf-mu)}.wt .lost.worst{color:var(--sf-ko);font-weight:700}
 .wt .st.ok{color:var(--sf-ok)}.wt .st.ko{color:var(--sf-ko)}
 .wt .stsub,.wt .empty{color:var(--sf-mu)}
+
+.wt .ban{overflow:hidden;white-space:nowrap;margin:-16px -16px 14px;padding:6px 0;background:#000080;border-bottom:3px ridge #c0c0c0;color:#ffff00;font:700 16px "Comic Sans MS","Comic Sans","Chalkboard SE",cursive}
+.wt .ban span{display:inline-block;padding-left:100%;animation:wtban 14s linear infinite}
+.wt .ban span::before,.wt .ban span::after{content:" ★ ";color:#ff00ff}
+@keyframes wtban{to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){.wt .ban span{animation:none;padding-left:0;display:block;text-align:center}}
 .wt .big{font-family:var(--font-anthropic-serif);font-size:var(--cds-font-size-title)}
 </style>
 <div class="wt">
+<div class="ban" role="note"><span>Le proto c'est pas pour vendre du rêve</span></div>
 <div class="eyebrow">Work Order · Pré-processing</div>
 <h1 id="top">Sélection de work teams</h1>
 <p class="sub">Composez un Work Order, choisissez les critères de pré-processing, puis lancez la sélection.</p>
