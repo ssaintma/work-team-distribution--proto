@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sélection de work teams — Quote Framework</title>
+<style>
+:root{--color-bg:#F3F3F3;--color-fg:#181818;--color-fg-muted:#444;--color-panel:#fff;--color-border-line:#E5E5E5;--color-ok:#2E844A;--color-bad:#BA0517;--cds-font-size-caption:.75rem;--cds-font-size-body:.875rem;--cds-font-size-heading:1rem;--cds-font-size-title:1.5rem;--cds-font-weight-medium:600;--cds-radius:.25rem;--cds-gap-sm:8px;--cds-gap-md:16px;--cds-pad-md:12px;--cds-pad-lg:16px;--font-anthropic-sans:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--font-anthropic-serif:Georgia,serif}
+@media (prefers-color-scheme:dark){:root{--color-bg:#14181F;--color-fg:#F3F3F3;--color-fg-muted:#B3BBC8;--color-panel:#1F252E;--color-border-line:#343C48}}
+html,body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(--font-anthropic-sans)}
+body{padding:16px}
+</style>
+</head>
+<body>
+<script>
+// Remplace l'API `dash` du dashboard Claude : charge les JSON de ./data et rappelle onData une fois prêts.
+(function(){
+  const ids=['q-workteams','q-workitems','postcodes'],store={},cbs=[];
+  window.dash={
+    data:id=>store[id]?{status:'ok',data:store[id]}:{status:'loading',data:[]},
+    onData:fn=>{cbs.push(fn);fn();}
+  };
+  Promise.all(ids.map(id=>fetch('data/'+id+'.json').then(r=>{if(!r.ok)throw new Error(id);return r.json();}).then(d=>{store[id]=d;})))
+    .then(()=>cbs.forEach(f=>f()))
+    .catch(e=>{document.body.insertAdjacentHTML('afterbegin','<p style="color:#BA0517;padding:16px">Impossible de charger les données ('+e.message+').</p>');});
+})();
+</script>
+<style>
+.wt{max-width:1100px;margin-inline:auto;font-family:var(--font-anthropic-sans);color:var(--color-fg)}
+.wt h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);margin:0 0 4px}
+.wt .sub{color:var(--color-fg-muted);margin:0 0 var(--cds-gap-md)}
+.wt .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:var(--cds-gap-md);margin-bottom:var(--cds-gap-md)}
+.wt .card{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-lg)}
+.wt h2{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0 0 2px}
+.wt .note{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);margin:0 0 var(--cds-gap-sm)}
+.wt .row{display:flex;gap:var(--cds-gap-sm);flex-wrap:wrap;align-items:center;margin-bottom:var(--cds-gap-sm)}
+.wt select,.wt input[type=text]{font:inherit;padding:6px 8px;border:1px solid var(--color-border-line);border-radius:var(--cds-radius);background:var(--color-bg);color:var(--color-fg);min-width:0}
+.wt select{flex:1 1 12rem}
+.wt button{font:inherit;padding:6px 12px;border:1px solid var(--color-border-line);border-radius:var(--cds-radius);background:var(--color-bg);color:var(--color-fg);cursor:pointer}
+.wt button.primary{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg);padding:8px 18px}
+.wt button:disabled{opacity:.45;cursor:default}
+.wt ul{list-style:none;margin:0;padding:0}
+.wt li.item{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--color-border-line)}
+.wt li.item small{color:var(--color-fg-muted)}
+.wt label.crit{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--color-border-line);cursor:pointer}
+.wt label.crit span small{display:block;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.wt .chips{display:flex;gap:6px;flex-wrap:wrap;margin:var(--cds-gap-sm) 0}
+.wt .chip{border:1px solid var(--color-border-line);border-radius:99px;padding:2px 10px;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);font-variant-numeric:tabular-nums}
+.wt .chip b{color:var(--color-fg);font-weight:var(--cds-font-weight-medium)}
+.wt table{width:100%;border-collapse:collapse;font-size:var(--cds-font-size-body)}
+.wt th{text-align:left;font-weight:var(--cds-font-weight-medium);color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);padding:6px 8px;border-bottom:1px solid var(--color-border-line)}
+.wt td{padding:8px;border-bottom:1px solid var(--color-border-line);vertical-align:top}
+.wt .tbl{overflow-x:auto}
+.wt .b{display:inline-block;padding:1px 8px;margin:0 4px 4px 0;border-radius:99px;font-size:var(--cds-font-size-caption);border:1px solid var(--color-border-line);color:var(--color-fg-muted)}
+.wt .b.p1{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
+.wt .b.off{border-color:var(--color-bad);color:var(--color-bad)}
+.wt .empty{color:var(--color-fg-muted);padding:var(--cds-pad-md) 0}
+.wt .tabs{display:flex;gap:6px;margin-bottom:var(--cds-gap-md)}
+.wt .tabs button.on{background:var(--color-fg);color:var(--color-bg);border-color:var(--color-fg)}
+.wt .fun{row-gap:4px;display:grid;grid-template-columns:minmax(7rem,10rem) 1fr 7rem;gap:6px 10px;align-items:center;font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums;margin:var(--cds-gap-sm) 0}
+.wt .fbar{height:18px;border-radius:4px;background:var(--cds-chart-muted,var(--color-border-line))}
+.wt .fbar.first{background:var(--color-fg)}
+.wt .fbar.worst{background:var(--cds-chart-status-critical,var(--color-bad))}
+.wt .lost{color:var(--color-fg-muted);text-align:right}
+.wt .lost.worst{color:var(--color-bad)}
+.wt tr.click{cursor:pointer}.wt tr.click:hover td,.wt tr.sel td{background:var(--color-bg)}
+.wt .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:var(--cds-gap-md);align-items:start}
+.wt .scroll{max-height:560px;overflow:auto}
+.wt th{position:sticky;top:0;background:var(--color-panel)}
+.wt .opts{display:flex;flex-wrap:wrap;gap:4px 12px}
+.wt .opts label{display:flex;gap:4px;align-items:center;font-size:var(--cds-font-size-caption);cursor:pointer}
+.wt .sp{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;margin-bottom:4px}
+.wt h3{font-size:var(--cds-font-size-body);font-weight:var(--cds-font-weight-medium);margin:14px 0 6px}
+.wt .st{display:flex;gap:6px;align-items:baseline;font-size:var(--cds-font-size-caption)}
+.wt .st .ic{font-weight:700}
+.wt .st.ok{color:var(--color-ok)}.wt .st.ko{color:var(--color-bad)}
+.wt .stsub{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);margin:2px 0 0 18px}
+
+/* Thème inspiré du Salesforce Lightning Design System */
+.wt{--sf-brand:#0176D3;--sf-btn:#0176D3;--sf-btn-h:#014486;--sf-bg:#F3F3F3;--sf-card:#FFFFFF;--sf-bd:#E5E5E5;--sf-bd2:#C9C9C9;--sf-in:#747474;--sf-tx:#181818;--sf-mu:#444444;--sf-ok:#2E844A;--sf-ko:#BA0517;--sf-sel:#EEF4FF;--sf-th:#F3F3F3;--sf-bar:#C9C9C9;
+ background:var(--sf-bg);color:var(--sf-tx);padding:16px;border-radius:.5rem;font-family:"Salesforce Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.wt{--sf-f0:#B9DAFF;--sf-f1:#014486}
+.wt.dk{--sf-f0:#2A4F7F;--sf-f1:#6CB4FF;--sf-brand:#78B0FD;--sf-btn:#0B5CAB;--sf-btn-h:#0176D3;--sf-bg:#14181F;--sf-card:#1F252E;--sf-bd:#343C48;--sf-bd2:#4A5462;--sf-in:#7C8797;--sf-tx:#F3F3F3;--sf-mu:#B3BBC8;--sf-ok:#45C65A;--sf-ko:#FE8F7F;--sf-sel:#16335C;--sf-th:#262D38;--sf-bar:#4A5462}
+.wt .eyebrow{font-size:var(--cds-font-size-caption);color:var(--sf-mu);text-transform:uppercase;letter-spacing:.06em;margin:0 0 2px}
+.wt h1{font-family:inherit;font-weight:700;font-size:1.375rem;color:var(--sf-tx)}
+.wt .sub,.wt .note,.wt .item small,.wt label.crit span small{color:var(--sf-mu)}
+.wt .card{background:var(--sf-card);border:1px solid var(--sf-bd);border-radius:.25rem;box-shadow:0 2px 2px 0 rgba(0,0,0,.1)}
+.wt h2{font-weight:700;font-size:1rem}
+.wt .tabs{gap:0;border-bottom:1px solid var(--sf-bd2)}
+.wt .tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--sf-mu);padding:8px 16px;margin-bottom:-1px}
+.wt .tabs button:hover{color:var(--sf-brand)}
+.wt .tabs button.on{background:none;color:var(--sf-brand);border-color:var(--sf-brand);font-weight:700}
+.wt button{background:var(--sf-card);color:var(--sf-brand);border:1px solid var(--sf-bd2);border-radius:.25rem}
+.wt button:hover:not(:disabled){background:var(--sf-th)}
+.wt button.primary{background:var(--sf-btn);border-color:var(--sf-btn);color:#fff;font-weight:600}
+.wt button.primary:hover:not(:disabled){background:var(--sf-btn-h);border-color:var(--sf-btn-h)}
+.wt select,.wt input[type=text]{background:var(--sf-card);color:var(--sf-tx);border:1px solid var(--sf-in);border-radius:.25rem}
+.wt select:focus,.wt input:focus,.wt button:focus-visible{outline:none;box-shadow:0 0 0 2px var(--sf-card),0 0 0 4px var(--sf-brand)}
+.wt input[type=checkbox]{accent-color:var(--sf-btn)}
+.wt li.item,.wt label.crit,.wt td,.wt th{border-color:var(--sf-bd)}
+.wt th{background:var(--sf-th);color:var(--sf-mu);text-transform:uppercase;letter-spacing:.04em;font-size:.6875rem;font-weight:700;border-bottom:1px solid var(--sf-bd2)}
+.wt tr.click:hover td{background:var(--sf-th)}
+.wt tr.sel td{background:var(--sf-sel)}
+.wt .b{background:var(--sf-th);border:1px solid var(--sf-bd);color:var(--sf-tx);border-radius:.875rem}
+.wt .b.p1{background:var(--sf-btn);border-color:var(--sf-btn);color:#fff}
+.wt .b.off{background:transparent;border-color:var(--sf-ko);color:var(--sf-ko)}
+.wt .fbar{background:var(--sf-bar)}.wt .fbar.first{background:var(--sf-btn)}.wt .fbar.worst{background:var(--sf-ko)}
+.wt .lost{color:var(--sf-mu)}.wt .lost.worst{color:var(--sf-ko);font-weight:700}
+.wt .st.ok{color:var(--sf-ok)}.wt .st.ko{color:var(--sf-ko)}
+.wt .stsub,.wt .empty{color:var(--sf-mu)}
+
+.wt .ban{overflow:hidden;white-space:nowrap;margin:-16px -16px 14px;padding:6px 0;background:#000080;border-bottom:3px ridge #c0c0c0;color:#ffff00;font:700 16px "Comic Sans MS","Comic Sans","Chalkboard SE",cursive}
+.wt .ban span{display:inline-block;padding-left:100%;animation:wtban 14s linear infinite}
+.wt .ban span::before,.wt .ban span::after{content:" ★ ";color:#ff00ff}
+@keyframes wtban{to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){.wt .ban span{animation:none;padding-left:0;display:block;text-align:center}}
+.wt .big{font-family:var(--font-anthropic-serif);font-size:var(--cds-font-size-title)}
+</style>
+<div class="wt">
+<div class="ban" role="note"><span>Le proto c'est pas pour vendre du rêve</span></div>
+<div class="eyebrow">Quote Framework · Pré-processing · <a href="index.html" style="color:inherit">← variante Services / Spécialités</a></div>
+<h1 id="top">Sélection de work teams — Quote</h1>
+<p class="sub">Composez un devis (Quote Line Items = ouvrages), choisissez les critères de pré-processing, puis lancez la sélection.</p>
+<div class="tabs"><button id="tb-sel" class="on">Sélection</button><button id="tb-teams">Work teams</button><button id="tb-wi">Ouvrages</button></div>
+<div id="tab-sel">
+<div class="grid">
+ <div class="card">
+  <h2>Quote</h2>
+  <p class="note">Code postal du chantier et ouvrages (work items) du devis.</p>
+  <div class="row"><select id="wt-cp" aria-label="Code postal"></select></div>
+  <div class="row"><select id="wt-wi" aria-label="Ouvrage"></select><button id="wt-add">Ajouter</button></div>
+  <ul id="wt-items"></ul>
+  <div class="row" style="margin-top:8px"><button id="wt-sample">Exemple</button><button id="wt-clear">Vider</button></div>
+ </div>
+ <div class="card">
+  <h2>Critères de pré-processing</h2>
+  <p class="note">Tous appliqués par défaut.</p>
+  <label class="crit"><input type="checkbox" id="c-zone" checked><span>Zone d'intervention<small>La work team couvre le code postal du chantier.</small></span></label>
+  <label class="crit"><input type="checkbox" id="c-wi" checked><span>Ouvrages<small>La work team réalise chacun des ouvrages du devis.</small></span></label>
+  <label class="crit"><input type="checkbox" id="c-prio" checked><span>Priorité P1<small>Au moins un ouvrage du devis est déclaré en P1 par la work team.</small></span></label>
+  <label class="crit"><input type="checkbox" id="c-lim" checked><span>Limite<small>Ne garder que les meilleures work teams (triées par ouvrages P1, puis ouvrages couverts).</small><span style="display:flex;gap:6px;align-items:center;margin-top:4px">Maximum <input type="number" id="lim-n" value="20" min="1" max="100" step="1" style="width:5rem;font:inherit;padding:4px 6px;border:1px solid var(--sf-in);border-radius:.25rem;background:var(--sf-card);color:var(--sf-tx)" aria-label="Nombre maximum de work teams"></span></span></label>
+  <div class="row" style="margin-top:12px"><button class="primary" id="wt-run" disabled>Pré-processing</button><span class="note" id="wt-hint" style="margin:0"></span></div>
+ </div>
+</div>
+<div class="card" id="results">
+ <h2>Work teams retenues</h2>
+ <p class="note" id="wt-sum">Lancez le pré-processing pour afficher les work teams.</p>
+ <div id="wt-funnel"></div>
+ <div class="tbl" id="wt-out"></div>
+</div>
+</div>
+<div id="tab-teams" hidden>
+ <div class="split">
+  <div class="card">
+   <h2>Liste des work teams</h2>
+   <p class="note" id="tl-note"></p>
+   <div class="row"><input type="text" id="tl-q" placeholder="Rechercher (nom, id, code postal, ouvrage)…" aria-label="Rechercher" style="flex:1 1 14rem"></div>
+   <div class="tbl scroll" id="tl-out"></div>
+  </div>
+  <div class="card" id="detail"><h2>Détail</h2><p class="note">Sélectionnez une work team.</p></div>
+ </div>
+</div>
+<div id="tab-wi" hidden>
+ <div class="split">
+  <div class="card">
+   <h2>Liste des ouvrages</h2>
+   <p class="note" id="wl-note"></p>
+   <div class="row"><input type="text" id="wl-q" placeholder="Rechercher (code, libellé, famille)…" aria-label="Rechercher un ouvrage" style="flex:1 1 14rem"></div>
+   <div class="tbl scroll" id="wl-out"></div>
+  </div>
+  <div class="card" id="wdetail"><h2>Détail</h2><p class="note">Sélectionnez un ouvrage.</p></div>
+ </div>
+</div>
+</div>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
+const split=s=>s?String(s).split('|').filter(Boolean):[];
+const low=n=>n.charAt(0).toLowerCase()+n.slice(1);
+const S={items:[],ran:false,steps:[],ready:false,built:false,teams:[],wi:new Map(),cps:[]};
+const orig=new Map(),wiOrig=new Map();let cur=null,wcur=null;
+const lab=c=>(S.wi.get(c)||{}).label||c;
+function renderItems(){
+  const ul=$('wt-items');ul.replaceChildren();
+  if(!S.items.length)ul.append(el('li','empty','Aucun ouvrage ajouté.'));
+  S.items.forEach(code=>{const li=el('li','item'),l=el('span');
+    l.append(el('b',null,code+' '),el('small',null,lab(code)+' · '+((S.wi.get(code)||{}).family||'')));
+    const b=el('button',null,'Retirer');b.onclick=()=>{S.items=S.items.filter(c=>c!==code);renderItems();};
+    li.append(l,b);ul.append(li);});
+  update();
+}
+function update(){
+  const need=S.items.length&&($('wt-cp').value||!$('c-zone').checked);
+  $('wt-run').disabled=!(S.ready&&need);
+  $('wt-hint').textContent=!S.items.length?'Ajoutez au moins un ouvrage.':(!$('wt-cp').value&&$('c-zone').checked?'Choisissez un code postal.':'');
+}
+function resetResults(){S.ran=false;S.steps=[];$('wt-sum').textContent='Lancez le pré-processing pour afficher les work teams.';$('wt-funnel').replaceChildren();$('wt-funnel').className='';$('wt-out').replaceChildren();}
+function run(){
+  S.ran=true;
+  const cp=$('wt-cp').value,on=k=>$('c-'+k).checked,codes=S.items.slice();
+  const tests=[['zone','Zone',t=>t.z.has(cp)],['wi','Ouvrages',t=>codes.every(c=>t.sp.has(c))],['prio','Priorité P1',t=>codes.some(c=>t.sp.get(c)==='P1')]].filter(x=>on(x[0]));
+  const scoreOf=t=>codes.filter(c=>t.sp.get(c)==='P1').length*100+codes.filter(c=>t.sp.has(c)).length*10+(t.z.has(cp)?1:0);
+  const ranked=a=>[...a].sort((x,y)=>scoreOf(y)-scoreOf(x)||x.id.localeCompare(y.id));
+  let pool=S.teams;const chips=[['Work teams',pool.length]];S.steps=[new Set(pool.map(t=>t.id))];
+  tests.forEach(([k,n,f])=>{pool=pool.filter(f);chips.push([n,pool.length]);S.steps.push(new Set(pool.map(t=>t.id)));});
+  if(on('lim')){const n=Math.min(100,Math.max(1,parseInt($('lim-n').value,10)||20));$('lim-n').value=n;pool=ranked(pool).slice(0,n);chips.push(['Limite ('+n+')',pool.length]);S.steps.push(new Set(pool.map(t=>t.id)));}
+  const maxLoss=Math.max(0,...chips.map((c,i)=>i?chips[i-1][1]-c[1]:0));
+  const stepName=i=>i?(chips[i][0].startsWith('Limite')?chips[i][0]:'Après '+low(chips[i][0])):chips[0][0];
+  const ST=(ok,text,sub)=>{const w=el('div','st '+(ok?'ok':'ko'));w.append(el('span','ic',ok?'✓':'✗'),el('span',null,text));w.setAttribute('aria-label',(ok?'OK : ':'KO : ')+text);
+    if(sub){const c=el('div');c.append(w,el('div','stsub',sub));return c;}return w;};
+  const show=idx=>{
+    const rows=ranked(S.teams.filter(t=>S.steps[idx].has(t.id)));
+    $('wt-sum').textContent=stepName(idx)+' : '+rows.length+' work team(s) · triées par ouvrages P1 puis ouvrages couverts. Cliquez sur une étape de l\'entonnoir pour changer la liste.';
+    const f=$('wt-funnel');f.replaceChildren();
+    chips.forEach(([n,v],i)=>{const loss=i?chips[i-1][1]-v:0,worst=loss>0&&loss===maxLoss,go=()=>show(i);
+      const lb=el('button',null,stepName(i));lb.style.cssText='text-align:left;border:0;padding:0;background:none;text-decoration:'+(i===idx?'underline':'none')+';font-weight:'+(i===idx?'600':'400')+';';lb.title='Afficher ces work teams';lb.onclick=go;
+      const bw=el('div'),bar=el('div','fbar');bar.style.width=(chips[0][1]?Math.max(v/chips[0][1]*100,1):1)+'%';bar.style.margin='0 auto';bar.style.height='26px';bar.style.borderRadius='3px';
+      bar.style.background='color-mix(in srgb, var(--sf-f1) '+Math.round(chips.length>1?i/(chips.length-1)*100:100)+'%, var(--sf-f0))';
+      if(i!==idx)bar.style.opacity='.45';else bar.style.boxShadow='0 0 0 2px var(--sf-card), 0 0 0 3px var(--sf-brand)';
+      bw.append(bar);bw.style.cursor='pointer';bw.title='Afficher ces work teams';bw.onclick=go;
+      f.append(lb,bw,el('span','lost'+(worst?' worst':''),v+(i?' (−'+loss+')':'')));});
+    f.className='fun';
+    const out=$('wt-out');out.replaceChildren();
+    if(!rows.length){out.append(el('div','empty','Aucune work team à cette étape. Désactivez un critère pour élargir.'));return;}
+    const tb=el('table'),h=el('tr');
+    [['#',null],['Work team',null],['Zone','zone'],['Ouvrages','wi'],['Priorité P1','prio']].forEach(([x,k])=>{const th=el('th',null,x+(k&&!on(k)?' (non appliqué)':''));if(k&&!on(k))th.style.opacity='.6';h.append(th);});
+    tb.append(h);
+    rows.forEach((t,i)=>{const tr=el('tr','click');tr.onclick=()=>{cur=t.id;tab('teams');drawDetail();drawList();};
+      tr.append(el('td',null,String(i+1)));
+      const a=el('td');a.append(el('b',null,t.name),el('br'),el('small',null,t.id));tr.append(a);
+      const zc=el('td');if(cp)zc.append(t.z.has(cp)?ST(true,cp):ST(false,cp+' hors zone'));else zc.append('—');
+      const miss=codes.filter(c=>!t.sp.has(c)),wc=el('td');
+      wc.append(miss.length?ST(false,miss.length+'/'+codes.length+' ouvrage(s) non couvert(s)',miss.map(c=>lab(c)).join(' · ')):ST(true,'Tous les ouvrages couverts',codes.map(lab).join(', ')));
+      const p1=codes.filter(c=>t.sp.get(c)==='P1'),pc=el('td');
+      pc.append(p1.length?ST(true,p1.map(lab).join(', ')):ST(false,'Aucun ouvrage P1'));
+      tr.append(zc,wc,pc);tb.append(tr);});
+    out.append(tb);
+  };
+  show(chips.length-1);
+}
+function tab(n){['sel','teams','wi'].forEach(k=>{$('tab-'+k).hidden=n!==k;$('tb-'+k).className=n===k?'on':'';});if(n==='teams')drawList();if(n==='wi')drawWiList();}
+function drawList(){
+  const q=$('tl-q').value.trim().toLowerCase();
+  const rows=S.teams.filter(t=>!q||(t.name+' '+t.id+' '+t.zl.join(' ')+' '+[...t.sp.keys()].map(k=>k+' '+lab(k)).join(' ')).toLowerCase().includes(q));
+  $('tl-note').textContent=rows.length+' / '+S.teams.length+' work teams · cliquez sur une ligne pour voir et modifier ses caractéristiques.';
+  const out=$('tl-out');out.replaceChildren();const tb=el('table'),h=el('tr');['Work team','Zones','Ouvrages'].forEach(x=>h.append(el('th',null,x)));tb.append(h);
+  rows.forEach(t=>{const tr=el('tr','click'+(t.id===cur?' sel':''));tr.onclick=()=>{cur=t.id;drawList();drawDetail();};
+    const a=el('td');a.append(el('b',null,t.name),el('br'),el('small',null,t.id));
+    const s=el('td');s.append(el('span','b',t.sp.size+' ouvrages'),el('span','b p1',[...t.sp.values()].filter(p=>p==='P1').length+' en P1'));
+    tr.append(a,el('td',null,t.z.size+' code(s) postaux'),s);tb.append(tr);});
+  out.append(tb);
+}
+function drawDetail(){
+  const d=$('detail');d.replaceChildren();const t=S.teams.find(x=>x.id===cur);if(!t)return;
+  const sync=()=>{t.zl=[...t.z].sort();};
+  const done=()=>{sync();drawList();if(!$('tab-wi').hidden)drawWiList();if(S.ran&&!$('wt-run').disabled)run();};
+  d.append(el('h2',null,t.name),el('p','note',t.id+" · les modifications s'appliquent tout de suite à la sélection, mais ne sont pas enregistrées (retour à l'état d'origine au rechargement)."));
+  d.append(el('h3',null,"Zones d'intervention ("+t.z.size+')'));
+  const zo=el('div','opts');S.cps.forEach(c=>{const l=el('label'),i=el('input');i.type='checkbox';i.checked=t.z.has(c);i.onchange=()=>{i.checked?t.z.add(c):t.z.delete(c);done();drawDetail();};l.append(i,c);zo.append(l);});d.append(zo);
+  d.append(el('h3',null,'Ouvrages ('+t.sp.size+')'));
+  const sg=el('div');let fam='';
+  [...S.wi.values()].forEach(w=>{if(w.family!==fam){fam=w.family;const g=el('div','note',fam);g.style.margin='8px 0 2px';sg.append(g);}
+    const r=el('div','sp');r.append(el('span',null,w.label));const s=el('select');[['','—'],['P1','P1'],['P2','P2']].forEach(([v,x])=>s.append(new Option(x,v)));s.style.flex='none';s.value=t.sp.get(w.code)||'';
+    s.onchange=()=>{s.value?t.sp.set(w.code,s.value):t.sp.delete(w.code);done();drawDetail();};r.append(s);sg.append(r);});
+  d.append(sg);
+  const rb=el('button',null,'Réinitialiser cette work team');rb.style.marginTop='12px';rb.onclick=()=>{const o=orig.get(t.id);t.z=new Set(o.z);t.sp=new Map(o.sp);sync();drawList();drawDetail();};d.append(rb);
+}
+function drawWiList(){
+  const q=$('wl-q').value.trim().toLowerCase();
+  const rows=[...S.wi.values()].filter(w=>!q||(w.code+' '+w.label+' '+w.family).toLowerCase().includes(q));
+  $('wl-note').textContent=rows.length+' / '+S.wi.size+' ouvrages · cliquez sur un ouvrage pour voir les work teams qui le réalisent.';
+  const out=$('wl-out');out.replaceChildren();const tb=el('table'),h=el('tr');['Ouvrage','Famille','Work teams','dont P1'].forEach(x=>h.append(el('th',null,x)));tb.append(h);
+  rows.forEach(w=>{const n=S.teams.filter(t=>t.sp.has(w.code)),tr=el('tr','click'+(w.code===wcur?' sel':''));tr.onclick=()=>{wcur=w.code;drawWiList();drawWiDetail();};
+    const a=el('td');a.append(el('b',null,w.code),el('br'),el('small',null,w.label));
+    tr.append(a,el('td',null,w.family),el('td',null,String(n.length)),el('td',null,String(n.filter(t=>t.sp.get(w.code)==='P1').length)));tb.append(tr);});
+  out.append(tb);
+}
+function drawWiDetail(){
+  const d=$('wdetail');d.replaceChildren();const w=S.wi.get(wcur);if(!w)return;
+  const done=()=>{refreshWiOptions();renderItems();drawWiList();if(S.ran&&!$('wt-run').disabled)run();};
+  d.append(el('h2',null,w.code),el('p','note',"Famille : "+w.family+". Le libellé peut être modifié (non enregistré)."));
+  d.append(el('h3',null,'Libellé'));
+  const li=el('input');li.type='text';li.value=w.label;li.style.width='100%';li.setAttribute('aria-label','Libellé');li.onchange=()=>{w.label=li.value.trim()||w.label;done();drawWiDetail();};d.append(li);
+  const n=S.teams.filter(t=>t.sp.has(w.code));
+  d.append(el('h3',null,'Work teams qui réalisent cet ouvrage ('+n.length+')'));
+  const box=el('div','opts');n.forEach(t=>{const b=el('span','b '+(t.sp.get(w.code)==='P1'?'p1':''),t.name+' '+t.sp.get(w.code));b.style.cursor='pointer';b.onclick=()=>{cur=t.id;tab('teams');drawDetail();};box.append(b);});
+  d.append(box);
+  const rb=el('button',null,'Réinitialiser cet ouvrage');rb.style.marginTop='12px';rb.onclick=()=>{w.label=wiOrig.get(w.code);done();drawWiDetail();};d.append(rb);
+}
+function refreshWiOptions(){const v=$('wt-wi').value;$('wt-wi').replaceChildren(...[...S.wi.values()].map(w=>new Option(w.code+' – '+w.label+' ('+w.family+')',w.code)));$('wt-wi').value=v;}
+$('wt-add').onclick=()=>{const v=$('wt-wi').value;if(v&&!S.items.includes(v)){S.items.push(v);renderItems();}};
+$('wt-clear').onclick=()=>{S.items=[];$('wt-cp').value='';resetResults();renderItems();};
+$('wt-sample').onclick=()=>{if(!S.ready)return;$('wt-cp').value='94200';S.items=['OUV009','OUV010','OUV012'];resetResults();renderItems();};
+$('wt-run').onclick=run;
+['c-zone','c-wi','c-prio','c-lim'].forEach(k=>$(k).addEventListener('change',update));
+$('wt-cp').addEventListener('change',update);
+$('tb-sel').onclick=()=>tab('sel');$('tb-teams').onclick=()=>tab('teams');$('tb-wi').onclick=()=>tab('wi');
+$('tl-q').addEventListener('input',drawList);$('wl-q').addEventListener('input',drawWiList);
+const wtRoot=document.querySelector('.wt');
+const theme=()=>wtRoot.classList.toggle('dk',matchMedia('(prefers-color-scheme: dark)').matches);
+dash.onData(()=>{
+  theme();
+  const d=['q-workteams','q-workitems','postcodes'].map(i=>dash.data(i));
+  if(d.some(x=>x.status!=='ok')){S.ready=false;update();return;}
+  if(!S.built){
+    S.teams=d[0].data.map(r=>({id:r.id,name:r.name,zl:split(r.zones),z:new Set(split(r.zones)),sp:new Map(split(r.workitems).map(x=>x.split(':')))}));
+    d[1].data.forEach(w=>{S.wi.set(w.code,w);wiOrig.set(w.code,w.label);});
+    S.teams.forEach(t=>orig.set(t.id,{z:[...t.z],sp:[...t.sp]}));
+    S.cps=d[2].data.map(r=>r.code);
+    $('wt-cp').replaceChildren(new Option('Code postal du chantier…',''),...S.cps.map(c=>new Option(c)));
+    refreshWiOptions();S.built=true;renderItems();
+  }
+  S.ready=true;update();
+});
+})();
+</script>
+</body>
+</html>
